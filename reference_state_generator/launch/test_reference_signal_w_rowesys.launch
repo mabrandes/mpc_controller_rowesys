@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<launch>
+
+<arg name="bag" default="$(find reference_state_generator)/data/poseimu.bag"/>
+<param name="use_sim_time" value="false"/>
+
+
+<arg name="controller_name"       default="rowesys_ackermann_steering_controller"/>
+<arg name="controller_param_path" default="$(find rowesys_control)/config/ackermann_steering.yaml"/>
+
+<include file="$(find rowesys_base_gazebo)/launch/gazebo.launch">
+</include>
+
+
+<include file="$(find rowesys_control)/launch/single_highlevel_controller.launch">
+  <arg name="controller_name"       value= "$(arg controller_name)"/>
+  <arg name="controller_param_path" value= "$(arg controller_param_path)"/>
+</include>
+
+<!-- Launch main node--> 
+
+<node pkg="reference_state_generator" type="ref_state_generator.py" name="ref_state_generator" output="screen">
+  <!--<rosparam command="load" file="$(find rosario_gtsam)/config/rosario_params.yaml" />-->
+</node>
+
+<node pkg="rosbag" type="play" name="rosbag_play" args="-r 1 --clock $(arg bag)" required="true" /> 
+
+<node pkg="mpc_planner" type="simple_mpc.py" name="simple_mpc" output="screen">
+</node>
+
+
+</launch>
+
+
+
+
+
+<!-- Launch rviz -->
+<!--node type="rviz" name="rviz" pkg="rviz" args="-d $(find reference_state_generator)/launch/show_pose.rviz" /-->
+
+<!-- GUI for Testing  -->
+  <!-- <node name = "rqt_gui" pkg = "rqt_gui" type = "rqt_gui" respawn = "false" output = "screen" 
+  args = "-perspective-file $(find rosario_gtsam)/rqt_multiplot/rqt_multiplot.perspective"/> -->
+
+
+
+
+<!-- launch-prefix="gdb -ex run -args" -->       
