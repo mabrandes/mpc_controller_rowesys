@@ -23,6 +23,8 @@ class Generator():
 
 	def __init__(self):
 
+		self.ref_time_ahead = 1.5
+
 		self.test = 0
 		self.angle_ref = 0
 		self.angle_rob = 0
@@ -73,7 +75,7 @@ class Generator():
 		self.dt=rospy.get_time()-self.dt_p
 
 		#generate ref pose
-		if self.dt >= 1.5:
+		if self.dt >= self.ref_time_ahead:
 			print("hurraaaaa: ", self.dt, self.it)
 			self.it += 1
 			self.dt_p = rospy.get_time()
@@ -195,7 +197,7 @@ def main():
 	test=Float64()
 
 
-	rate = rospy.Rate(5) # 10hz
+	rate = rospy.Rate(50) # 10hz
 	
 
 	while not rospy.is_shutdown():
