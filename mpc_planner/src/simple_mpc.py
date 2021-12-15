@@ -21,10 +21,11 @@ from tqdm import tqdm
 import rospy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Float64
 
 from rowesys_navigation_msgs.msg import AutonomousMode, RowPosition
 from rowesys_base_msgs.msg import MotorInputs
-from reference_state_generator.msg import states_mpc
+from reference_state_generator.msg import States_mpc
 
 
 
@@ -43,10 +44,10 @@ class RosieDx(nn.Module):
         
 
         self.goal_state = torch.Tensor([0., 0., 0.])
-        self.goal_weights = torch.Tensor([1. ,0.5, 1.])
+        self.goal_weights = torch.Tensor([5. ,1., 1.])
         self.ctrl_penalty = 0.001
-        self.lower = -1.0 #torch.Tensor([-0.5, -0.5])
-        self.upper = 1.0 #torch.Tensor([0.5, 0.5])
+        self.lower = -10.0 #torch.Tensor([-0.5, -0.5])
+        self.upper = 10.0 #torch.Tensor([0.5, 0.5])
 
         self.linesearch_decay = 0.2
         self.max_linesearch_iter = 5
@@ -112,12 +113,12 @@ class RosieDx(nn.Module):
         alpha_dot = math.sin(alpha)/rho*u_speed_x - u_ang_vel
         beta_dot = -math.sin(alpha)/rho*u_speed_x
 
+
         new_rho = rho + rho_dot*self.dt
         new_alpha = alpha + alpha_dot*self.dt
         new_beta = beta + beta_dot*self.dt
 
         state = torch.stack((new_rho, new_alpha, new_beta), dim=1)
-
 
         if squeeze:
             state = state.squeeze(0)
@@ -137,10 +138,10 @@ class MPC():
         self.dt = 0
         self.timestamp = rospy.get_rostime()
         self.input_list = None
-        self.steps = 15
+        self.steps = 10
 
         #subscribe to line offsets
-        self.line_subscriber = rospy.Subscriber('/mpc_states', states_mpc, self.line_position_callback, queue_size=1)
+        self.line_subscriber = rospy.Subscriber('/mpc_states', States_mpc, self.line_position_callback, queue_size=1)
         #self.line_subscriber = rospy.Subscriber('/rowesys/robot_wheel_odometry', Odometry, self.line_position_callback, queue_size=1)
 
         #self.autonomous_mode_subscriber = rospy.Subscriber('/rowesys/robot_autonomous_mode', AutonomousMode, self.autonomous_callback, queue_size=1)
@@ -181,7 +182,7 @@ class MPC():
                     dx.n_state, dx.n_ctrl, mpc_T,
                     u_init=u_init,
                     u_lower=dx.lower, u_upper=dx.upper,
-                    lqr_iter=20,
+                    lqr_iter=10,
                     verbose=0,
                     exit_unconverged=False,
                     detach_unconverged=False,
@@ -215,10 +216,11 @@ class MPC():
         self.alpha= data.angle_alpha
         self.beta = data.angle_beta
 
+        print("beta", self.beta)
+
         # self.offset_y1 = self.line_offset
         # self.offset_y2 = self.line_offset - 1.3*math.atan(self.line_angle)
         
-
         if self.start_mpc:
             self.execute_mpc()
  
@@ -239,7 +241,7 @@ def main():
     mpc = MPC()
 
     # Create a rate
-    rate = rospy.Rate(20)
+    rate = rospy.Rate(10)
 
     while not rospy.is_shutdown():
         if mpc.start_mpc and not mpc.dt == 0:
@@ -247,28 +249,35 @@ def main():
             # publish robot twist
 
             robot_twist_pub = rospy.Publisher('/rowesys/rowesys_ackermann_steering_controller/cmd_vel', Twist, queue_size=10)
+            mpc_pub = rospy.Publisher('/mpc_runtime', Float64, queue_size=10)
 
             twist_msg = Twist()
+            mpc_msg = Float64()
 
             sum_dt = (rospy.get_rostime()).to_sec() - mpc.timestamp.to_sec()
 
             
 
             index = int(sum_dt/mpc.dt)
-            print("index: ", index)
+            mpc_msg.data=index
+            mpc_pub.publish(mpc_msg)
+            #print("index: ", index)
+
+            
 
             if(index >= mpc.steps):
-                twist_msg.linear.x = 0
+                #u_list = mpc.input_list[mpc.steps-1,:].tolist()
+                twist_msg.linear.x = u_list[0][0]
                 twist_msg.linear.y = 0
-                twist_msg.angular.z = 0
+                twist_msg.angular.z = u_list[0][1]
             else:
                 u_list = mpc.input_list[index,:].tolist()
-
                 twist_msg.linear.x = u_list[0][0]
                 twist_msg.linear.y = 0
                 twist_msg.angular.z = u_list[0][1]
 
             robot_twist_pub.publish(twist_msg)
+            print("rho", mpc.rho)
 
         rate.sleep()
 

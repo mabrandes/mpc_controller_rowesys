@@ -8,22 +8,23 @@ project(reference_state_generator)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  roscpp
   std_msgs
   message_generation
 )
 
 add_message_files(
   FILES
-  states_mpc.msg
+  States_mpc.msg
 )
 
 generate_messages(
   DEPENDENCIES
-  std_msgs  # Or other packages containing msgs
+  std_msgs  
 )
 
 catkin_package(
-    CATKIN_DEPENDS rospy message_runtime std_msgs 
+    CATKIN_DEPENDS roscpp rospy message_runtime std_msgs 
 )
 
 catkin_install_python(PROGRAMS
@@ -32,3 +33,7 @@ catkin_install_python(PROGRAMS
 )
 
 
+include_directories(
+ include
+  ${catkin_INCLUDE_DIRS}
+)

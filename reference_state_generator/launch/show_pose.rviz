@@ -9,6 +9,7 @@ Panels:
         - /PoseWithCovariance1
         - /PoseWithCovariance1/Covariance1
         - /PoseWithCovariance1/Covariance1/Position1
+        - /Marker3
       Splitter Ratio: 0.5
     Tree Height: 549
   - Class: rviz/Selection
@@ -101,6 +102,22 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /pose_ref_visualization
+      Name: Marker
+      Namespaces:
+        orient_ref: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /pose_rob_visualization
+      Name: Marker
+      Namespaces:
+        orient_rob: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -129,25 +146,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 102.12588500976562
+      Distance: 34.15864562988281
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -28.320589065551758
-        Y: 2.961759328842163
-        Z: 16.896316528320312
+        X: -25.80685806274414
+        Y: -5.748836517333984
+        Z: 1.8307987451553345
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.030398603528738022
+      Pitch: 0.025398604571819305
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.2303985357284546
+      Yaw: 0.2653985321521759
     Saved: ~
 Window Geometry:
   Displays:

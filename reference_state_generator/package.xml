@@ -53,10 +53,13 @@
   <build_export_depend>rospy</build_export_depend>
   <exec_depend>rospy</exec_depend>
   <depend>std_msgs</depend>
-  
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <depend>roscpp</depend>
   <!-- to include own messages -->
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
+  <!--  <build_depend>message_generation</build_depend> -->
+  <!-- <exec_depend>message_runtime</exec_depend> -->
+  
 
 
   <!-- The export tag contains other, unspecified, tags -->
