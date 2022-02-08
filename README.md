@@ -45,7 +45,7 @@ file:///home/mbrandes/Pictures/Selection_015.png![image](https://user-images.git
 
 Most important parameters for solver:
 - goal_weights: weigths of states
-- lqr_iter: #iterations for solver
+- lqr_iter: #iterations per optimization
 - eps: threshold of solver
 - steps, dt: defining horizon of look ahead
 
