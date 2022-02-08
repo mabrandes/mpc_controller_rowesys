@@ -30,10 +30,9 @@ Shows a "small" run time until a certain point. As soon as angle gets to big, ru
 file:///home/mbrandes/Pictures/Screenshot%20from%202021-12-23%2010-28-09.png![image](https://user-images.githubusercontent.com/37098089/152985868-60d0fc98-d122-45e3-a2c6-13cf363e23a1.png)
 
 I have never really checked papers for best line following models. Current model might not be the best.
-Current model:
 
-file:///home/mbrandes/Pictures/Selection_014.png![image](https://user-images.githubusercontent.com/37098089/152986687-fee353de-0f77-4455-a453-5ae3f9c08988.png)
-
+### Current model (Introduction Autonomous Mobile Robots p. 81 - 88):
+/home/mbrandes/Pictures/Selection_015.png
 Most important parameters
 - goal_weights: weigths of states
 - lqr_iter: #iterations for solver
