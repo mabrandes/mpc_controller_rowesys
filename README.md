@@ -19,12 +19,12 @@ The datasets/rosbags to generate the reference are located in the /data folder. 
 
 In Rviz the PosewithCovariance Marker belongs to the real position. The computed reference position and orientation (real position/orientation + offset) and the pos/orient of the robot (gazebo model) are despicted with arrows. 
 
-The package outputs 4 states, three of them (distance between ref and rob -> rho , angle between rob orientation vector and distance vector -> alpha, angle between distance vector and ref orientation vector -> beta) are needed for the current model of the MPC controller.
+The package outputs 4 states, ( rho , alpha,  beta and phi) as depicted below. Only alpha, beta and rho are needed for the MPC controller.
 
 ### Current model (Introduction Autonomous Mobile Robots p. 81 - 88):
 file:///home/mbrandes/Pictures/Selection_015.png![image](https://user-images.githubusercontent.com/37098089/152987202-a865cbe2-29b5-42e0-a347-a8306c29337c.png)
 
-Most important parameters
+Most important tuning parameter:
 - ref_time_ahead: defining the time the reference pos/orient is kept constant
 
 ## MPC Planner
