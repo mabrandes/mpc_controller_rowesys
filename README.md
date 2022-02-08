@@ -51,7 +51,7 @@ Most important parameters for solver:
 
 If problems with python version occure change 
 ```
-#!/usr/bin/env python3 to #!/usr/bin/env python3
+#!/usr/bin/env python3 to #!/usr/bin/env python2
 ```
 or vice versa
 
