@@ -32,7 +32,8 @@ file:///home/mbrandes/Pictures/Screenshot%20from%202021-12-23%2010-28-09.png![im
 I have never really checked papers for best line following models. Current model might not be the best.
 
 ### Current model (Introduction Autonomous Mobile Robots p. 81 - 88):
-/home/mbrandes/Pictures/Selection_015.png
+file:///home/mbrandes/Pictures/Selection_015.png![image](https://user-images.githubusercontent.com/37098089/152987202-a865cbe2-29b5-42e0-a347-a8306c29337c.png)
+
 Most important parameters
 - goal_weights: weigths of states
 - lqr_iter: #iterations for solver
