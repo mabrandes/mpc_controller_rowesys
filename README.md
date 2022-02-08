@@ -9,7 +9,7 @@
 rowesys_base_gazebo, rowesys_control
 
 ## Reference state generator
-The launch file for this project is located in the reference_generator package: 
+The launch file for this project is located in the reference_state_generator package: 
 
 ```
 test_reference_signal_w_rowesys.launch
