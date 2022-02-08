@@ -49,7 +49,7 @@ Most important parameters for solver:
 - eps: threshold of solver
 - steps, dt: defining horizon of look ahead
 
-If problems with python version occure change 
+If problems with python version occur, change: 
 ```
 #!/usr/bin/env python3 to #!/usr/bin/env python2
 ```
