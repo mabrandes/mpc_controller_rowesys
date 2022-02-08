@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
 import rospy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float64MultiArray
@@ -24,7 +26,7 @@ class Generator():
 
 	def __init__(self):
 
-		self.ref_time_ahead = 0.5
+		self.ref_time_ahead = 1.5
 
 		self.test = 0
 		self.angle_ref = [0, 0, 0]
@@ -44,34 +46,20 @@ class Generator():
 		#otherwise first dt will be huge
 		self.dt_p = rospy.get_time()
 		self.it = 0
+		self.k=1
+		self.add=0
+		self.region=False
 
 		self.distance = 0
 		self.angle_phi = 0
 		self.angle_alpha = 0
 		self.angle_beta = 0
+		self.dp = np.array([0,0,0])
 
 		self.marker = Marker()
 		
-
-		self.sub_se = rospy.Subscriber ('/ov_msckf/poseimu', PoseWithCovarianceStamped, self.states_ref_callback, queue_size=100)
-		self.sub_twist = rospy.Subscriber ('/rowesys/rowesys_ackermann_steering_controller/odom', Odometry, self.twist, queue_size=100)
-		self.sub_mod = rospy.Subscriber ('/gazebo/model_states', ModelStates, self.states_rob_callback, queue_size=100)
-
-	def twist(self,msg):
-		
-		omega = msg.twist.twist.angular.z
-		#y=0 for ackermann
-		v_base = np.array([msg.twist.twist.linear.x, msg.twist.twist.linear.y])
-
-		dx=1.260+.186
-		dy=(.846/2+.162)
-		phi=math.atan2(dy,dx)
-		d=math.sqrt(dx**2+dy**2)
-		v_r=d*omega
-
-		v=np.array([v_r*math.cos(phi),v_r*math.sin(phi)])
-		v_tot=v+v_base
-		self.yaw_extra=math.atan2(v_tot[1],v_tot[0])
+		self.sub_se = rospy.Subscriber ('/ov_msckf/poseimu', PoseWithCovarianceStamped, self.states_ref_callback, queue_size=1)
+		self.sub_mod = rospy.Subscriber ('/gazebo/model_states', ModelStates, self.states_rob_callback, queue_size=1)
 		
 
 
@@ -81,20 +69,24 @@ class Generator():
 		self.orient_q_ref = [orientation_q.x, orientation_q.y,orientation_q.z,orientation_q.w]
 		(roll,pitch,yaw) = euler_from_quaternion(self.orient_q_ref)
 
-		#angles in alphasense camera frame
-		#angles_ref_camera = [0,0, yaw+self.yaw_extra]
-		angles_ref_camera = [0,0, yaw]
+		# angles in alphasense camera frame
+		# depending on the data set used 180° need to be added in order for the reference to face the same direction as the robot in gazebo
+		angles_ref_camera = [0,0, yaw+math.pi]
+		#angles_ref_camera = [0,0, yaw]
 
 		pos = msg.pose.pose.position
-		position_ = np.array([pos.x, pos.y, 0])
 
-		self.angle_ref, position = self.pose2trans_matrix(angles_ref_camera ,position_)
+		position_ = -np.array([pos.x, pos.y, 0])
+
+		#make reference pose tangential to path
+		angle_ref, position = self.pose2trans_matrix(angles_ref_camera ,position_)
+
+		#position_ = position of camera
+		#position  = position of center of robot
 		#angle_ref is the same as angles_ref_camera
 
 		#get initial offset
 		if self.init == 0:
-			#position_ = position of camera
-			#position  = position of center of robot
 			self.offset_position = position
 			self.init += 1
 
@@ -107,10 +99,9 @@ class Generator():
 			self.it += 1
 			self.dt_p = rospy.get_time()
 			
-
 			self.position_ref= position - self.offset_position
+			self.angle_ref= angle_ref
 		
-			#self.orientation_q_new = quaternion_from_euler(angles_ref_camera[0],angles_ref_camera[1],angles_ref_camera[2])
 			self.orientation_q_new = quaternion_from_euler(self.angle_ref[0],self.angle_ref[1],self.angle_ref[2])
 
 			
@@ -120,33 +111,51 @@ class Generator():
 		#world,camera
 		T_wc = compose_matrix(angles=angles_camera,translate=pos)
 
-		x= 1.260+.186
-		y= -(.846/2+.162)
-		z= .404
-		t=[x,y,z]
+		#translation vector from camera to center of rotation of robot (middle of rigid rear axle)
+		x = 1.260+.186
+		y = -(.846/2+.162)
+		z = .404
+		t = [x,y,z]
+
+		#overkill: since angle is always the same. Simple translation would suffice
 		#inverse of T_rc: only translations get negative of zero angles. 
-		#output is numpy array
 		T_cr = inverse_matrix(compose_matrix(angles=[0,0,0],translate=t))
+		#output is numpy array
+
 		T_wr = T_wc.dot(T_cr)
 
 		scale, shear, angles, trans, persp = decompose_matrix(T_wr)
-		#print(angles)
-
-
 
 		return angles,trans
+
 	
 	def states_rob_callback(self,msg):
 
 		orientation_rob = msg.pose[1].orientation
 		self.orient_q_rob = [orientation_rob.x, orientation_rob.y,orientation_rob.z,orientation_rob.w]
 		(roll, pitch, yaw) = euler_from_quaternion(self.orient_q_rob)
-		#print("orent_rob :", self.arr_orient_rob)
+		angle_rob = [0,0,yaw]
 
 		pos=msg.pose[1].position
+		position_rob=np.array([pos.x, pos.y,0])
+		
 
-		self.position_rob=np.array([pos.x, pos.y,0])
-		self.angle_rob=[0,0,yaw]
+		########## same as pose2trans_matrix function for reference, but not necessary ###############
+		T_wc = compose_matrix(angles=angle_rob,translate=position_rob)
+
+		#x= 1.260/2
+		x = 0
+		y = 0
+		z = 0
+		t=[x,y,z]
+		T_cr = inverse_matrix(compose_matrix(angles=[0,0,0],translate=t))
+		T_wr = T_wc.dot(T_cr)
+
+		scale, shear, angles, trans, persp = decompose_matrix(T_wr)
+		##########################################################################
+
+		self.position_rob=trans
+		self.angle_rob=angles
 
 		self.mpc_states()
 
@@ -154,11 +163,11 @@ class Generator():
 	def mpc_states(self):
 
 		if self.it >= 1 :
-			dp = self.position_ref-self.position_rob
-			self.angle_phi = self.angle_ref[2]-self.angle_rob[2] 		#*180/math.pi
-			self.angle_alpha = -self.angle_phi+math.atan2(dp[1],dp[0])
+			self.dp = self.position_ref-self.position_rob
+			self.angle_phi = (self.angle_ref[2]-self.angle_rob[2]) 		#*180/math.pi
+			self.angle_alpha = -self.angle_phi+math.atan2(self.dp[1],self.dp[0])
 			self.angle_beta = -self.angle_phi-self.angle_alpha
-			self.distance = np.linalg.norm(dp)
+			self.distance = np.linalg.norm(self.dp)
 			
 
 	def path_line_marker(self, frame_id):
@@ -184,7 +193,6 @@ class Generator():
 
 	def distance_marker(self, frame_id):
 
-        #create marker:person_marker, modify a red cylinder, last indefinitely
 		mark = Marker()
 		mark.header.frame_id = frame_id #tie marker visualization to laser it comes from
 		mark.header.stamp = rospy.Time.now() # Note you need to call rospy.init_node() before this will work
@@ -213,7 +221,6 @@ class Generator():
 
 	def pose_rob_marker(self, frame_id):
 
-        #create marker:person_marker, modify a red cylinder, last indefinitely
 		mark = Marker()
 		mark.header.frame_id = frame_id #tie marker visualization to laser it comes from
 		mark.header.stamp = rospy.Time.now() # Note you need to call rospy.init_node() before this will work
@@ -243,7 +250,6 @@ class Generator():
 	
 	def pose_ref_marker(self, frame_id):
 
-        #create marker:person_marker, modify a red cylinder, last indefinitely
 		mark = Marker()
 		mark.header.frame_id = frame_id #tie marker visualization to laser it comes from
 		mark.header.stamp = rospy.Time.now() # Note you need to call rospy.init_node() before this will work
@@ -280,10 +286,9 @@ def main():
 	gen=Generator()
 
 
-	#sub_simu = rospy.Subscriber ('/gazebo/model_states', ModelStates, get_rotation_states)
-	pub_ref_pose = rospy.Publisher('/ref_pose', PoseStamped, queue_size=10)
-	pub_dist_angle = rospy.Publisher('/mpc_states', States_mpc, queue_size=10)
-	pub_e = rospy.Publisher('/euler_yaw', Float64, queue_size=10)
+	pub_ref_pose = rospy.Publisher('/ref_pose', PoseStamped, queue_size=1)
+	pub_dist_angle = rospy.Publisher('/mpc_states', States_mpc, queue_size=1)
+	pub_e = rospy.Publisher('/test', Float64, queue_size=10)
 	pub_dist= rospy.Publisher("dist_visualization", Marker)
 	pub_path = rospy.Publisher("path_visualization", Marker, queue_size=10)
 	pub_pose_rob = rospy.Publisher("pose_rob_visualization", Marker, queue_size=10)
@@ -295,7 +300,7 @@ def main():
 	test=Float64()
 
 
-	rate = rospy.Rate(20) # 10hz
+	rate = rospy.Rate(20)
 	
 
 	while not rospy.is_shutdown():
@@ -306,7 +311,8 @@ def main():
 		states.angle_alpha = gen.angle_alpha
 		states.angle_beta = gen.angle_beta
 		states.dist = gen.distance
-
+		states.dx = gen.dp[0]
+		states.dy = gen.dp[1]
 
 		ref_pose.header.stamp = rospy.Time.now()
 		ref_pose.header.frame_id = "global"
@@ -319,14 +325,13 @@ def main():
 		ref_pose.pose.orientation.w = gen.orientation_q_new[3]
 
 		
-		
 		pub_ref_pose.publish(ref_pose)
 		#rospy.loginfo(ref_pose)
 
 		pub_dist_angle.publish(states)
 		#rospy.loginfo(states)
 
-		test.data=rospy.get_time()
+		test.data=gen.position_rob[0]
 		pub_e.publish(test)
 		#rospy.loginfo(test)
 

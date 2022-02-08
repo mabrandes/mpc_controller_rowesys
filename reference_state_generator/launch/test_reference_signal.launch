@@ -2,7 +2,7 @@
 <launch>
 
 <!-- Play rosbag -->
-<arg name="bag" default="$(find reference_state_generator)/data/pose_and_twist_garage.bag"/>
+<arg name="bag" default="$(find reference_state_generator)/data/poseimu.bag"/>
 <param name="use_sim_time" value="true"/>
 <node pkg="rosbag" type="play" name="rosbag_play" args="-r 1 --clock $(arg bag)" required="true" /> 
 

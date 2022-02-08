@@ -2,61 +2,55 @@
 <launch>
 
 <!--<arg name="bag" default="$(find reference_state_generator)/data/poseimu.bag"/>-->
-<arg name="bag" default="$(find reference_state_generator)/data/poseimu.bag"/>
+<!--<arg name="bag" default="$(find reference_state_generator)/data/pose_and_twist_field_CCW.bag"/>-->
+<arg name="bag" default="$(find reference_state_generator)/data/pose_and_twist_field.bag"/>
 <param name="use_sim_time" value="false"/>
 
 
 <arg name="controller_name"       default="rowesys_ackermann_steering_controller"/>
 <arg name="controller_param_path" default="$(find rowesys_control)/config/ackermann_steering.yaml"/>
 
-<include file="$(find rowesys_base_gazebo)/launch/gazebo.launch">
-</include>
+<!--
+<arg name="controller_name"       default="rowesys_swerve_steering_controller"/>
+<arg name="controller_param_path" default="$(find rowesys_control)/config/swerve_steering.yaml"/>
+-->
 
+<!-- Rowesys Nodes -->
+<include file="$(find rowesys_base_gazebo)/launch/gazebo.launch"/>
 
 <include file="$(find rowesys_control)/launch/single_highlevel_controller.launch">
   <arg name="controller_name"       value= "$(arg controller_name)"/>
   <arg name="controller_param_path" value= "$(arg controller_param_path)"/>
 </include>
 
-<!-- Launch main node--> 
 
-<node pkg="reference_state_generator" type="ref_state_generator.py" name="ref_state_generator" output="screen">
-  <!--<rosparam command="load" file="$(find rosario_gtsam)/config/rosario_params.yaml" />-->
-</node>
-
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 1 map global 50" />
-
-<node pkg="rosbag" type="play" name="rosbag_play" args="-r 0.5 --clock $(arg bag)" required="true" /> 
+<!-- MPC nodes--> 
 
 <node pkg="mpc_planner" type="simple_mpc.py" name="simple_mpc" output="screen" />
+<!--
+<node pkg="mpc_planner" type="pid.py" name="simple_pid" output="screen" />
+-->
 
+<node pkg="reference_state_generator" type="ref_state_generator.py" name="ref_state_generator" output="screen"/>
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 1 map global 50" />
+
+
+<node pkg="rosbag" type="play" name="rosbag_play" args="-r 0.5 --clock $(arg bag)" required="true" /> 
 <node type="rviz" name="rviz" pkg="rviz" args="-d $(find reference_state_generator)/launch/show_pose.rviz" />
 
 
+
+<!-- Record Rosbag -->
 <arg name="is_record" default="true"/>
 <arg name="bags_directory" value="/home/mbrandes/Documents/Rowesys/datasets/mpc"/>
 
-	<!-- Record Rosbag -->
-	<node pkg="rosbag" type="record" name="rosbag_record" args="record -o $(arg bags_directory)/bag 
-		/rowesys/rowesys_ackermann_steering_controller/cmd_vel
-    /mpc_runtime
-    /mpc_states" if="$(eval is_record)"/>   
-
+<node pkg="rosbag" type="record" name="rosbag_record" args="record -o $(arg bags_directory)/bag 
+	/rowesys/rowesys_ackermann_steering_controller/cmd_vel
+    	/mpc_runtime
+    	/mpc_states
+		/ov_msckf/poseimu
+		/test
+    	/ref_pose" if="$(eval is_record)"/>   
 
 </launch>
-
-
-
-
-
-<!-- Launch rviz -->
-<!--node type="rviz" name="rviz" pkg="rviz" args="-d $(find reference_state_generator)/launch/show_pose.rviz" /-->
-
-<!-- GUI for Testing  -->
-  <!-- <node name = "rqt_gui" pkg = "rqt_gui" type = "rqt_gui" respawn = "false" output = "screen" 
-  args = "-perspective-file $(find rosario_gtsam)/rqt_multiplot/rqt_multiplot.perspective"/> -->
-
-
-
-
-<!-- launch-prefix="gdb -ex run -args" -->       
+   

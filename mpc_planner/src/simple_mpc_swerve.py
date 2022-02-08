@@ -40,12 +40,11 @@ class RosieDx(nn.Module):
         
         self.dt = 0.05
         self.n_state = 3
-        self.n_ctrl = 2
+        self.n_ctrl = 3
         
-
         self.ctrl_penalty = 0.001
-        self.lower = -10. #torch.Tensor([-0.5, -0.5])
-        self.upper = 10. #torch.Tensor([0.5, 0.5])
+        self.lower = -10.0 #torch.Tensor([-0.5, -0.5])
+        self.upper = 10.0 #torch.Tensor([0.5, 0.5])
 
         self.linesearch_decay = 0.2
         self.max_linesearch_iter = 5
@@ -72,10 +71,10 @@ class RosieDx(nn.Module):
         assert x.ndimension() == 2
         assert x.shape[0] == u.shape[0]
         assert x.shape[1] == 3
-        assert u.shape[1] == 2
+        assert u.shape[1] == 3
         assert u.ndimension() == 2
                 
-        u_speed_x, u_ang_vel= torch.unbind(u, dim=1)
+        u_speed_x, u_speed_y, u_ang_vel = torch.unbind(u, dim=1)
         rho, alpha, beta = torch.unbind(x, dim=1)
 
         #u_ang_vel = torch.clamp(u, -self.max_angvel, self.max_angvel)[:,0]
@@ -108,11 +107,9 @@ class RosieDx(nn.Module):
         # state = torch.stack((state_y1, state_y2), dim=1)
 
 
-
-        ###### Model ###########
-        rho_dot = -math.cos(alpha)*u_speed_x
-        alpha_dot = math.sin(alpha)/rho*u_speed_x - u_ang_vel
-        beta_dot = -math.sin(alpha)/rho*u_speed_x
+        rho_dot = -math.cos(alpha)*u_speed_x - math.sin(alpha)*u_speed_y
+        alpha_dot = math.sin(alpha)/rho*u_speed_x - math.cos(alpha)/rho*u_speed_y - u_ang_vel
+        beta_dot = -math.sin(alpha)/rho*u_speed_x + math.cos(alpha)/rho*u_speed_y
 
         new_rho = rho + rho_dot*self.dt
         new_alpha = alpha + alpha_dot*self.dt
@@ -143,8 +140,7 @@ class MPC():
         #subscribe to line offsets
         #queue size has to be 1 because subscribing frequency is very low because of MPC!!!!!!!!!!!!!!
         self.line_subscriber = rospy.Subscriber('/mpc_states', States_mpc, self.line_position_callback, queue_size=1)
-        
-        #self.swerve_input_subscriber = rospy.Subscriber('/cmd_vel', MotorInputs, self.swerve_input_callback, queue_size=1)
+
 
 
     def execute_mpc(self):
@@ -231,7 +227,6 @@ class MPC():
 
 
 
-
 def main():
 
     rospy.init_node('rowesys_simple_mpc_node')
@@ -239,6 +234,7 @@ def main():
     
     mpc = MPC()
 
+    # Create a rate
     rate = rospy.Rate(20)
 
     while not rospy.is_shutdown():
@@ -246,8 +242,8 @@ def main():
             
             # publish robot twist
 
-            robot_twist_pub = rospy.Publisher('/rowesys/rowesys_ackermann_steering_controller/cmd_vel', Twist, queue_size=100)
-            mpc_pub = rospy.Publisher('/mpc_runtime', Float64, queue_size=100)
+            robot_twist_pub = rospy.Publisher('/rowesys/rowesys_swerve_steering_controller/cmd_vel', Twist, queue_size=10)
+            mpc_pub = rospy.Publisher('/mpc_runtime', Float64, queue_size=10)
 
             twist_msg = Twist()
             mpc_msg = Float64()
@@ -257,8 +253,10 @@ def main():
             index = int(sum_dt/mpc.dt)
             mpc_msg.data=index
             mpc_pub.publish(mpc_msg)
+            #print("index: ", index)
 
             
+
             # if(index >= mpc.steps):
             #     u_list = mpc.input_list[mpc.steps-1,:].tolist()
             #     twist_msg.linear.x = u_list[0][0]
