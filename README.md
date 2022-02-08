@@ -21,6 +21,9 @@ In Rviz the PosewithCovariance Marker belongs to the real position. The computed
 
 The package outputs 4 states, three of them (distance between ref and rob -> rho , angle between rob orientation vector and distance vector -> alpha, angle between distance vector and ref orientation vector -> beta) are needed for the current model of the MPC controller.
 
+### Current model (Introduction Autonomous Mobile Robots p. 81 - 88):
+file:///home/mbrandes/Pictures/Selection_015.png![image](https://user-images.githubusercontent.com/37098089/152987202-a865cbe2-29b5-42e0-a347-a8306c29337c.png)
+
 Most important parameters
 - ref_time_ahead: defining the time the reference pos/orient is kept constant
 
@@ -39,9 +42,6 @@ Shows a "small" run time until a certain point. As soon as angle gets to big, ru
 file:///home/mbrandes/Pictures/Screenshot%20from%202021-12-23%2010-28-09.png![image](https://user-images.githubusercontent.com/37098089/152985868-60d0fc98-d122-45e3-a2c6-13cf363e23a1.png)
 
 I have never really checked papers for best line following models. Current model might not be the best.
-
-### Current model (Introduction Autonomous Mobile Robots p. 81 - 88):
-file:///home/mbrandes/Pictures/Selection_015.png![image](https://user-images.githubusercontent.com/37098089/152987202-a865cbe2-29b5-42e0-a347-a8306c29337c.png)
 
 Most important parameters for solver:
 - goal_weights: weigths of states
