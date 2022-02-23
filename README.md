@@ -34,7 +34,11 @@ Mpc library only worked with Pytorch_version 1.4.0. More details in mpc_planner 
 pip torch == 1.4.0
 pip show torch
 ```
-There occured some problems with python versions. The versions can be changed at the top og the script with  #!/usr/bin/env python2 or #!/usr/bin/env python.
+If problems with python version occur, change: 
+```
+#!/usr/bin/env python3 to #!/usr/bin/env python2
+```
+or vice versa
 
 ### Performance
 Performance of controller in general is quite bad. Same has been observed for a simple PID (even though not much time has been spent on tuning).
@@ -50,11 +54,7 @@ Most important parameters for solver:
 - eps: threshold of solver
 - steps, dt: defining horizon of look ahead
 
-If problems with python version occur, change: 
-```
-#!/usr/bin/env python3 to #!/usr/bin/env python2
-```
-or vice versa
+
 
 
 
