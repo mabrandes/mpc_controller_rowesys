@@ -8,7 +8,7 @@
 ## Following packages need to be installed from rowesys project (and their dependencies):
 rowesys_base_gazebo, rowesys_control
 
-## Reference state generator
+## reference_state_generator
 The launch file for this project is located in the reference_state_generator package: 
 
 ```
@@ -27,13 +27,14 @@ file:///home/mbrandes/Pictures/Selection_015.png![image](https://user-images.git
 Most important tuning parameter:
 - ref_time_ahead: defining the time the reference pos/orient is kept constant
 
-## MPC Planner
+## mpc_planner
 
 Mpc library only worked with Pytorch_version 1.4.0. More details in mpc_planner package.
 ```
 pip torch == 1.4.0
 pip show torch
 ```
+There occured some problems with python versions. The versions can be changed at the top og the script with  #!/usr/bin/env python2 or #!/usr/bin/env python.
 
 ### Performance
 Performance of controller in general is quite bad. Same has been observed for a simple PID (even though not much time has been spent on tuning).
